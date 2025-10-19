@@ -15,8 +15,17 @@ const cursorPosition = ref(0)
 const showExportModal = ref(false)
 const exportOptions = ref({
   color: '#FFFFFF',
-  weight: 'normal',
-  background: 'transparent'
+  weight: 'bold',
+  background: false,
+  backgroundColor: '#FFFFFF',
+  backgroundOpacity: 1,
+  stroke: false,
+  strokeColor: '#000000',
+  strokeWidth: 1,
+  fontFamily: 'jf-openhuninn',
+  rounded: false,
+  borderRadius: 10,
+  borderColor: '#FFFFFF'
 })
 
 // 處理輸入
@@ -66,17 +75,29 @@ const confirmExport = () => {
 
 // 背景預覽樣式
 const backgroundPreviewStyle = computed(() => {
-  if (exportOptions.value.background === 'transparent') {
+  if (!exportOptions.value.background) {
     return {
       backgroundColor: 'transparent',
       backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 20 20\'%3E%3Cg fill=\'%23f0f0f0\'%3E%3Crect x=\'0\' y=\'0\' width=\'10\' height=\'10\'/%3E%3Crect x=\'10\' y=\'10\' width=\'10\' height=\'10\'/%3E%3C/g%3E%3C/svg%3E")'
     }
   }
+  const color = exportOptions.value.backgroundColor
+  const opacity = exportOptions.value.backgroundOpacity
   return {
-    backgroundColor: exportOptions.value.background,
+    backgroundColor: `rgba(${parseInt(color.slice(1, 3), 16)}, ${parseInt(color.slice(3, 5), 16)}, ${parseInt(color.slice(5, 7), 16)}, ${opacity})`,
     backgroundImage: 'none'
   }
 })
+
+// 獲取字體名稱
+const getFontFamily = (fontFamily: string) => {
+  const fontMap: { [key: string]: string } = {
+    'default': '"Microsoft JhengHei", "PingFang TC", sans-serif',
+    'cjkFonts': '"cjkFonts", "Microsoft JhengHei", sans-serif',
+    'jf-openhuninn': '"jf-openhuninn", "Microsoft JhengHei", sans-serif'
+  }
+  return fontMap[fontFamily] || fontMap['default']
+}
 
 // 輸出圖片功能
 const exportImage = () => {
@@ -89,6 +110,10 @@ const exportImage = () => {
   // 創建 canvas
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')!
+  
+  // 提高畫質 - 設置高DPI
+  const devicePixelRatio = window.devicePixelRatio || 1
+  const scaleFactor = 2 // 2倍解析度
   
   // 計算實際內容邊界
   const characterGroups = resultContainer.querySelectorAll('.character-group')
@@ -113,24 +138,48 @@ const exportImage = () => {
   const contentWidth = maxX - minX
   const contentHeight = maxY - minY
   
-  console.log('Content dimensions:', {
-    contentWidth,
-    contentHeight,
-    minX,
-    minY,
-    maxX,
-    maxY,
-    containerWidth: containerRect.width,
-    containerHeight: containerRect.height
-  })
   
-  canvas.width = contentWidth + padding * 2
-  canvas.height = contentHeight + padding * 2
+  // 設置高解析度 canvas
+  const baseWidth = contentWidth + padding * 2
+  const baseHeight = contentHeight + padding * 2
+  
+  canvas.width = baseWidth * scaleFactor
+  canvas.height = baseHeight * scaleFactor
+  canvas.style.width = baseWidth + 'px'
+  canvas.style.height = baseHeight + 'px'
+  
+  // 縮放 context 以匹配高解析度
+  ctx.scale(scaleFactor, scaleFactor)
   
   // 設置背景
-  if (exportOptions.value.background !== 'transparent') {
-    ctx.fillStyle = exportOptions.value.background
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  if (exportOptions.value.background) {
+    const color = exportOptions.value.backgroundColor
+    const opacity = exportOptions.value.backgroundOpacity
+    const r = parseInt(color.slice(1, 3), 16)
+    const g = parseInt(color.slice(3, 5), 16)
+    const b = parseInt(color.slice(5, 7), 16)
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`
+    ctx.fillRect(0, 0, baseWidth, baseHeight)
+  }
+  
+  // 繪製圓角邊框
+  if (exportOptions.value.rounded) {
+    const radius = exportOptions.value.borderRadius
+    const borderColor = exportOptions.value.borderColor
+    const borderWidth = 2
+    
+    // 調整邊框位置，避免被切到
+    const borderPadding = borderWidth / 2
+    const borderX = borderPadding
+    const borderY = borderPadding
+    const borderWidth_actual = baseWidth - borderWidth
+    const borderHeight_actual = baseHeight - borderWidth
+    
+    ctx.strokeStyle = borderColor
+    ctx.lineWidth = borderWidth
+    ctx.beginPath()
+    ctx.roundRect(borderX, borderY, borderWidth_actual, borderHeight_actual, radius)
+    ctx.stroke()
   }
   
   characterGroups.forEach((group) => {
@@ -148,10 +197,21 @@ const exportImage = () => {
       const charX = charRect.left - containerRect.left - minX + padding
       const charY = charRect.top - containerRect.top - minY + padding
       
-      ctx.font = `32px "Microsoft JhengHei", "PingFang TC", sans-serif`
-      ctx.fillStyle = exportOptions.value.color
+      const fontWeight = exportOptions.value.weight === 'bold' ? 'bold' : exportOptions.value.weight === 'lighter' ? 'lighter' : 'normal'
+      const fontFamily = getFontFamily(exportOptions.value.fontFamily)
+      ctx.font = `${fontWeight} 32px ${fontFamily}`
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
+      
+      // 繪製描邊
+      if (exportOptions.value.stroke) {
+        ctx.strokeStyle = exportOptions.value.strokeColor
+        ctx.lineWidth = exportOptions.value.strokeWidth
+        ctx.strokeText(chineseChar.textContent || '', charX, charY)
+      }
+      
+      // 繪製填充
+      ctx.fillStyle = exportOptions.value.color
       ctx.fillText(chineseChar.textContent || '', charX, charY)
     }
     
@@ -162,13 +222,26 @@ const exportImage = () => {
       const symbolX = symbolRect.left - containerRect.left - minX + padding
       const symbolY = symbolRect.top - containerRect.top - minY + padding
       
-      ctx.font = `18px "Microsoft JhengHei", "PingFang TC", sans-serif`
-      ctx.fillStyle = exportOptions.value.color
+      const fontWeight = exportOptions.value.weight === 'bold' ? 'bold' : exportOptions.value.weight === 'lighter' ? 'lighter' : 'normal'
+      const fontFamily = getFontFamily(exportOptions.value.fontFamily)
+      ctx.font = `${fontWeight} 18px ${fontFamily}`
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
+      
       // 增加注音符號之間的間距
       const spacing = index * 2
-      ctx.fillText(symbol.textContent || '', symbolX, symbolY + spacing)
+      const symbolYPos = symbolY + spacing
+      
+      // 繪製描邊
+      if (exportOptions.value.stroke) {
+        ctx.strokeStyle = exportOptions.value.strokeColor
+        ctx.lineWidth = exportOptions.value.strokeWidth
+        ctx.strokeText(symbol.textContent || '', symbolX, symbolYPos)
+      }
+      
+      // 繪製填充
+      ctx.fillStyle = exportOptions.value.color
+      ctx.fillText(symbol.textContent || '', symbolX, symbolYPos)
     })
     
     // 繪製音調標註
@@ -181,10 +254,21 @@ const exportImage = () => {
       const toneY = toneRect.top - containerRect.top - minY + padding
       
       // 調整音調位置，進一步降低高度
-      ctx.font = `12px "Microsoft JhengHei", "PingFang TC", sans-serif`
-      ctx.fillStyle = exportOptions.value.color
+      const fontWeight = exportOptions.value.weight === 'bold' ? 'bold' : exportOptions.value.weight === 'lighter' ? 'lighter' : 'normal'
+      const fontFamily = getFontFamily(exportOptions.value.fontFamily)
+      ctx.font = `${fontWeight} 12px ${fontFamily}`
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
+      
+      // 繪製描邊
+      if (exportOptions.value.stroke) {
+        ctx.strokeStyle = exportOptions.value.strokeColor
+        ctx.lineWidth = exportOptions.value.strokeWidth
+        ctx.strokeText(tone.textContent || '', toneX, toneY)
+      }
+      
+      // 繪製填充
+      ctx.fillStyle = exportOptions.value.color
       ctx.fillText(tone.textContent || '', toneX, toneY)
     })
     
@@ -196,10 +280,21 @@ const exportImage = () => {
       const textY = textRect.top - containerRect.top - minY + padding
       
       // 調整 plain text 位置，提高高度
-      ctx.font = `16px "Microsoft JhengHei", "PingFang TC", sans-serif`
-      ctx.fillStyle = exportOptions.value.color
+      const fontWeight = exportOptions.value.weight === 'bold' ? 'bold' : exportOptions.value.weight === 'lighter' ? 'lighter' : 'normal'
+      const fontFamily = getFontFamily(exportOptions.value.fontFamily)
+      ctx.font = `${fontWeight} 16px ${fontFamily}`
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
+      
+      // 繪製描邊
+      if (exportOptions.value.stroke) {
+        ctx.strokeStyle = exportOptions.value.strokeColor
+        ctx.lineWidth = exportOptions.value.strokeWidth
+        ctx.strokeText(plainTextChar.textContent || '', textX, textY)
+      }
+      
+      // 繪製填充
+      ctx.fillStyle = exportOptions.value.color
       ctx.fillText(plainTextChar.textContent || '', textX, textY)
     }
   })
@@ -227,6 +322,7 @@ const exportImage = () => {
       <ResultDisplay 
         :text="resultText" 
         :show="showResult"
+        :font-family="exportOptions.fontFamily"
       />
     </main>
 
@@ -276,19 +372,120 @@ const exportImage = () => {
         </div>
 
         <div class="option-group">
-          <label for="background-select">背景：</label>
+          <label for="font-select">字體：</label>
+          <select id="font-select" v-model="exportOptions.fontFamily">
+            <option value="default">預設字體</option>
+            <option value="cjkFonts">思源字體</option>
+            <option value="jf-openhuninn">粉圓體</option>
+          </select>
+        </div>
+
+        <div class="option-group">
+          <label>
+            <input type="checkbox" v-model="exportOptions.background" class="background-checkbox">
+            背景
+          </label>
+        </div>
+
+        <div v-if="exportOptions.background" class="option-group">
+          <label for="background-color-select">背景顏色：</label>
           <div class="background-preview-container">
             <div class="background-preview" :style="backgroundPreviewStyle"></div>
-            <select id="background-select" v-model="exportOptions.background">
-              <option value="transparent">透明</option>
+            <select id="background-color-select" v-model="exportOptions.backgroundColor">
               <option value="#FFFFFF">白色</option>
               <option value="#F5F1EB">奶白</option>
               <option value="#E8D5C4">淺米</option>
               <option value="#D4B5A0">米色</option>
-              <option value="#C7B299">卡其</option>
               <option value="#B8A082">駝色</option>
               <option value="#A8A8A8">灰色</option>
-              <option value="#8B7D6B">棕色</option>
+              <option value="#000000">黑色</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="exportOptions.background" class="option-group">
+          <label for="opacity-range">透明度：</label>
+          <div class="opacity-container">
+            <input 
+              type="range" 
+              id="opacity-range" 
+              v-model="exportOptions.backgroundOpacity" 
+              min="0" 
+              max="1" 
+              step="0.1"
+              class="opacity-slider"
+            >
+            <span class="opacity-value">{{ Math.round(exportOptions.backgroundOpacity * 100) }}%</span>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label>
+            <input type="checkbox" v-model="exportOptions.stroke" class="stroke-checkbox">
+            文字描邊
+          </label>
+        </div>
+
+        <div v-if="exportOptions.stroke" class="option-group">
+          <label for="stroke-color-select">描邊顏色：</label>
+          <div class="color-preview-container">
+            <div class="color-preview" :style="{ backgroundColor: exportOptions.strokeColor }"></div>
+            <select id="stroke-color-select" v-model="exportOptions.strokeColor">
+              <option value="#000000">黑色</option>
+              <option value="#FFFFFF">白色</option>
+              <option value="#8B7D6B">棕</option>
+              <option value="#A8A8A8">灰</option>
+              <option value="#D4B5A0">米</option>
+              <option value="#C7B299">卡其</option>
+              <option value="#B8A082">駝</option>
+              <option value="#9B8B7A">深棕</option>
+              <option value="#E8D5C4">淺米</option>
+              <option value="#F5F1EB">奶白</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="exportOptions.stroke" class="option-group">
+          <label for="stroke-width-select">描邊粗細：</label>
+          <select id="stroke-width-select" v-model="exportOptions.strokeWidth">
+            <option :value="1">細</option>
+            <option :value="2">中</option>
+            <option :value="3">粗</option>
+            <option :value="4">很粗</option>
+          </select>
+        </div>
+
+        <div class="option-group">
+          <label>
+            <input type="checkbox" v-model="exportOptions.rounded" class="rounded-checkbox">
+            圓角邊框
+          </label>
+        </div>
+
+        <div v-if="exportOptions.rounded" class="option-group">
+          <label for="border-radius-select">圓角大小：</label>
+          <select id="border-radius-select" v-model="exportOptions.borderRadius">
+            <option :value="5">小</option>
+            <option :value="10">中</option>
+            <option :value="15">大</option>
+            <option :value="20">很大</option>
+          </select>
+        </div>
+
+        <div v-if="exportOptions.rounded" class="option-group">
+          <label for="border-color-select">邊框顏色：</label>
+          <div class="color-preview-container">
+            <div class="color-preview" :style="{ backgroundColor: exportOptions.borderColor }"></div>
+            <select id="border-color-select" v-model="exportOptions.borderColor">
+              <option value="#FFFFFF">白色</option>
+              <option value="#000000">黑色</option>
+              <option value="#8B7D6B">棕</option>
+              <option value="#A8A8A8">灰</option>
+              <option value="#D4B5A0">米</option>
+              <option value="#B8A082">駝</option>
+              <option value="#9B8B7A">深棕</option>
+              <option value="#E8D5C4">淺米</option>
+              <option value="#F5F1EB">奶白</option>
             </select>
           </div>
         </div>
@@ -311,6 +508,17 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* 字體定義 */
+@font-face {
+  font-family: 'cjkFonts';
+  src: url('/fonts/cjkFonts_allseto_v1.11.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'jf-openhuninn';
+  src: url('/fonts/jf-openhuninn_v2.1.ttf') format('truetype');
 }
 </style>
 
@@ -419,6 +627,8 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   max-width: 400px;
   width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .modal-content h3 {
@@ -506,5 +716,50 @@ body {
 
 .confirm-btn:hover {
   background: #5a6fd8;
+}
+
+.stroke-checkbox, .rounded-checkbox, .background-checkbox {
+  margin-right: 0.5rem;
+}
+
+.opacity-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.opacity-slider {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #ddd;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #667eea;
+  cursor: pointer;
+}
+
+.opacity-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #667eea;
+  cursor: pointer;
+  border: none;
+}
+
+.opacity-value {
+  min-width: 40px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #666;
 }
 </style>

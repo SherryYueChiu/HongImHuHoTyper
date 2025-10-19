@@ -4,6 +4,7 @@ import { ref, computed } from 'vue'
 interface Props {
   text: string
   show: boolean
+  fontFamily?: string
 }
 
 interface CharacterGroup {
@@ -15,6 +16,16 @@ interface CharacterGroup {
 
 const props = defineProps<Props>()
 const emit = defineEmits<{}>()
+
+// 字體樣式
+const fontStyle = computed(() => {
+  const fontMap: { [key: string]: string } = {
+    'default': '"Microsoft JhengHei", "PingFang TC", sans-serif',
+    'cjkFonts': '"cjkFonts", "Microsoft JhengHei", sans-serif',
+    'jf-openhuninn': '"jf-openhuninn", "Microsoft JhengHei", sans-serif'
+  }
+  return fontMap[props.fontFamily || 'default'] || fontMap['default']
+})
 
 // 處理文字，將注音符號和音調組合在一起
 const processedText = computed((): CharacterGroup[] => {
@@ -327,7 +338,7 @@ const processedText = computed((): CharacterGroup[] => {
 .plain-text-char {
   font-size: 1rem;
   color: #333;
-  font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  font-family: v-bind(fontStyle);
   display: inline;
 }
 
@@ -336,7 +347,7 @@ const processedText = computed((): CharacterGroup[] => {
   font-weight: 600;
   color: #333;
   margin-bottom: 0.3rem;
-  font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  font-family: v-bind(fontStyle);
 }
 
 .phonetic-column {
@@ -353,7 +364,7 @@ const processedText = computed((): CharacterGroup[] => {
   font-weight: 500;
   margin: 0;
   text-align: center;
-  font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+  font-family: v-bind(fontStyle);
   line-height: 1;
 }
 
