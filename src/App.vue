@@ -77,25 +77,27 @@ const exportImage = () => {
       const charX = charRect.left - containerRect.left + padding
       const charY = charRect.top - containerRect.top + padding
       
-      ctx.font = '36px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      ctx.font = '32px "Microsoft JhengHei", "PingFang TC", sans-serif'
       ctx.fillStyle = '#333'
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      ctx.fillText(chineseChar.textContent || '', charX, charY + 36)
+      ctx.fillText(chineseChar.textContent || '', charX, charY + 32)
     }
     
     // 繪製注音符號
     const phoneticSymbols = group.querySelectorAll('.phonetic-symbol')
-    phoneticSymbols.forEach((symbol) => {
+    phoneticSymbols.forEach((symbol, index) => {
       const symbolRect = symbol.getBoundingClientRect()
       const symbolX = symbolRect.left - containerRect.left + padding
       const symbolY = symbolRect.top - containerRect.top + padding
       
-      ctx.font = '20px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      ctx.font = '18px "Microsoft JhengHei", "PingFang TC", sans-serif'
       ctx.fillStyle = '#333'
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      ctx.fillText(symbol.textContent || '', symbolX, symbolY + 20)
+      // 增加注音符號之間的間距
+      const spacing = index * 2
+      ctx.fillText(symbol.textContent || '', symbolX, symbolY + 18 + spacing)
     })
     
     // 繪製音調標註
@@ -105,21 +107,14 @@ const exportImage = () => {
       
       const toneRect = tone.getBoundingClientRect()
       const toneX = toneRect.left - containerRect.left + padding
-      let toneY = toneRect.top - containerRect.top + padding
+      const toneY = toneRect.top - containerRect.top + padding
       
-      // 所有音調標記都向下調整
-      toneY += 4
-      
-      // 調整以ㄧ結尾的音調標記位置
-      if (tone.classList.contains('yi-ending')) {
-        toneY += 8 // 對應 CSS 中的 translateY(1em) 約等於 16px
-      }
-      
-      ctx.font = '14px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      // 調整音調位置，進一步降低高度
+      ctx.font = '12px "Microsoft JhengHei", "PingFang TC", sans-serif'
       ctx.fillStyle = '#333'
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      ctx.fillText(tone.textContent || '', toneX, toneY + 14)
+      ctx.fillText(tone.textContent || '', toneX, toneY + 20)
     })
     
     // 繪製 plain text
@@ -129,7 +124,8 @@ const exportImage = () => {
       const textX = textRect.left - containerRect.left + padding
       const textY = textRect.top - containerRect.top + padding
       
-      ctx.font = '20px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      // 調整 plain text 位置，提高高度
+      ctx.font = '16px "Microsoft JhengHei", "PingFang TC", sans-serif'
       ctx.fillStyle = '#333'
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'

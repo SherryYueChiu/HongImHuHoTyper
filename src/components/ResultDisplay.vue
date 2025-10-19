@@ -289,7 +289,8 @@ const processedText = computed((): CharacterGroup[] => {
   min-height: 200px;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: .2em;
   overflow-y: auto;
   line-height: 1.5;
@@ -317,10 +318,10 @@ const processedText = computed((): CharacterGroup[] => {
 
 .character-group.line-break {
   width: 100%;
-  height: 1.5em;
+  height: 0;
   display: block;
   margin: 0;
-  align-self: stretch;
+  flex: none;
 }
 
 .plain-text-char {
