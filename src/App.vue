@@ -45,11 +45,103 @@ const handlePhoneticInput = (phonetic: string, data?: any) => {
   }
 }
 
-// 清除內容
-const clearContent = () => {
-  inputText.value = ''
-  resultText.value = ''
-  showResult.value = false
+// 輸出圖片功能
+const exportImage = () => {
+  const resultContainer = document.querySelector('.result-container')
+  if (!resultContainer) return
+  
+  // 獲取容器的尺寸和位置
+  const containerRect = resultContainer.getBoundingClientRect()
+  
+  // 創建 canvas
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')!
+  
+  // 設定畫布大小，添加一些邊距
+  const padding = 40
+  canvas.width = containerRect.width + padding * 2
+  canvas.height = containerRect.height + padding * 2
+  
+  // 獲取所有字符組元素
+  const characterGroups = resultContainer.querySelectorAll('.character-group')
+  
+  characterGroups.forEach((group) => {
+    const groupRect = group.getBoundingClientRect()
+    const relativeX = groupRect.left - containerRect.left + padding
+    const relativeY = groupRect.top - containerRect.top + padding
+    
+    // 繪製漢字
+    const chineseChar = group.querySelector('.chinese-char')
+    if (chineseChar) {
+      const charRect = chineseChar.getBoundingClientRect()
+      const charX = charRect.left - containerRect.left + padding
+      const charY = charRect.top - containerRect.top + padding
+      
+      ctx.font = '36px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      ctx.fillStyle = '#333'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(chineseChar.textContent || '', charX, charY + 36)
+    }
+    
+    // 繪製注音符號
+    const phoneticSymbols = group.querySelectorAll('.phonetic-symbol')
+    phoneticSymbols.forEach((symbol) => {
+      const symbolRect = symbol.getBoundingClientRect()
+      const symbolX = symbolRect.left - containerRect.left + padding
+      const symbolY = symbolRect.top - containerRect.top + padding
+      
+      ctx.font = '20px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      ctx.fillStyle = '#333'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(symbol.textContent || '', symbolX, symbolY + 20)
+    })
+    
+    // 繪製音調標註
+    const toneMarks = group.querySelectorAll('.tone-mark')
+    toneMarks.forEach((tone) => {
+      if (tone.classList.contains('transparent')) return
+      
+      const toneRect = tone.getBoundingClientRect()
+      const toneX = toneRect.left - containerRect.left + padding
+      let toneY = toneRect.top - containerRect.top + padding
+      
+      // 所有音調標記都向下調整
+      toneY += 4
+      
+      // 調整以ㄧ結尾的音調標記位置
+      if (tone.classList.contains('yi-ending')) {
+        toneY += 8 // 對應 CSS 中的 translateY(1em) 約等於 16px
+      }
+      
+      ctx.font = '14px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      ctx.fillStyle = '#333'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(tone.textContent || '', toneX, toneY + 14)
+    })
+    
+    // 繪製 plain text
+    const plainTextChar = group.querySelector('.plain-text-char')
+    if (plainTextChar) {
+      const textRect = plainTextChar.getBoundingClientRect()
+      const textX = textRect.left - containerRect.left + padding
+      const textY = textRect.top - containerRect.top + padding
+      
+      ctx.font = '20px "Microsoft JhengHei", "PingFang TC", sans-serif'
+      ctx.fillStyle = '#333'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.fillText(plainTextChar.textContent || '', textX, textY + 20)
+    }
+  })
+  
+  // 下載圖片
+  const link = document.createElement('a')
+  link.download = '台語方音符號.png'
+  link.href = canvas.toDataURL('image/png')
+  link.click()
 }
 </script>
 
@@ -58,6 +150,9 @@ const clearContent = () => {
     <!-- 標題 -->
     <header class="header">
       <h1>台語方音符號輸入法</h1>
+      <button v-if="inputText || showResult" @click="exportImage" class="export-btn">
+        輸出圖片
+      </button>
     </header>
 
     <!-- 上半部：結果展示區 -->
@@ -65,7 +160,6 @@ const clearContent = () => {
       <ResultDisplay 
         :text="resultText" 
         :show="showResult"
-        @clear="clearContent"
       />
     </main>
 
@@ -109,7 +203,9 @@ body {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   padding: 1rem;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -120,6 +216,22 @@ body {
   font-weight: 600;
 }
 
+.export-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: #4CAF50;
+  color: white;
+}
+
+.export-btn:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
 .main-content {
   flex: 1;
   padding: 1rem;
@@ -128,8 +240,19 @@ body {
 }
 
 @media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
   .header h1 {
     font-size: 1.2rem;
+  }
+  
+  .export-btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
   }
 }
 </style>

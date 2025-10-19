@@ -14,9 +14,7 @@ interface CharacterGroup {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{
-  clear: []
-}>()
+const emit = defineEmits<{}>()
 
 // 處理文字，將注音符號和音調組合在一起
 const processedText = computed((): CharacterGroup[] => {
@@ -161,110 +159,7 @@ const processedText = computed((): CharacterGroup[] => {
   return groups
 })
 
-// 輸出圖片功能
-const exportImage = () => {
-  const resultContainer = document.querySelector('.result-container')
-  if (!resultContainer) return
-  
-  // 獲取容器的尺寸和位置
-  const containerRect = resultContainer.getBoundingClientRect()
-  
-  // 創建 canvas
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')!
-  
-  // 設定畫布大小，添加一些邊距
-  const padding = 40
-  canvas.width = containerRect.width + padding * 2
-  canvas.height = containerRect.height + padding * 2
-  
-  // 設定透明背景（不填充背景色）
-  
-  // 獲取所有字符組元素
-  const characterGroups = resultContainer.querySelectorAll('.character-group')
-  
-  characterGroups.forEach((group) => {
-    const groupRect = group.getBoundingClientRect()
-    const relativeX = groupRect.left - containerRect.left + padding
-    const relativeY = groupRect.top - containerRect.top + padding
-    
-    // 繪製漢字
-    const chineseChar = group.querySelector('.chinese-char')
-    if (chineseChar) {
-      const charRect = chineseChar.getBoundingClientRect()
-      const charX = charRect.left - containerRect.left + padding
-      const charY = charRect.top - containerRect.top + padding
-      
-      ctx.font = '36px "Microsoft JhengHei", "PingFang TC", sans-serif'
-      ctx.fillStyle = '#333'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'top'
-      ctx.fillText(chineseChar.textContent || '', charX, charY + 36)
-    }
-    
-    // 繪製注音符號
-    const phoneticSymbols = group.querySelectorAll('.phonetic-symbol')
-    phoneticSymbols.forEach((symbol) => {
-      const symbolRect = symbol.getBoundingClientRect()
-      const symbolX = symbolRect.left - containerRect.left + padding
-      const symbolY = symbolRect.top - containerRect.top + padding
-      
-      ctx.font = '20px "Microsoft JhengHei", "PingFang TC", sans-serif'
-      ctx.fillStyle = '#333'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'top'
-      ctx.fillText(symbol.textContent || '', symbolX, symbolY + 20)
-    })
-    
-    // 繪製音調標註
-    const toneMarks = group.querySelectorAll('.tone-mark')
-    toneMarks.forEach((tone) => {
-      if (tone.classList.contains('transparent')) return
-      
-      const toneRect = tone.getBoundingClientRect()
-      const toneX = toneRect.left - containerRect.left + padding
-      let toneY = toneRect.top - containerRect.top + padding
-      
-      // 所有音調標記都向下調整
-      toneY += 4
-      
-      // 調整以ㄧ結尾的音調標記位置
-      if (tone.classList.contains('yi-ending')) {
-        toneY += 8 // 對應 CSS 中的 translateY(1em) 約等於 16px
-      }
-      
-      ctx.font = '14px "Microsoft JhengHei", "PingFang TC", sans-serif'
-      ctx.fillStyle = '#333'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'top'
-      ctx.fillText(tone.textContent || '', toneX, toneY + 14)
-    })
-    
-    // 繪製 plain text
-    const plainTextChar = group.querySelector('.plain-text-char')
-    if (plainTextChar) {
-      const textRect = plainTextChar.getBoundingClientRect()
-      const textX = textRect.left - containerRect.left + padding
-      const textY = textRect.top - containerRect.top + padding
-      
-      ctx.font = '20px "Microsoft JhengHei", "PingFang TC", sans-serif'
-      ctx.fillStyle = '#333'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'top'
-      ctx.fillText(plainTextChar.textContent || '', textX, textY + 20)
-    }
-  })
-  
-  // 下載圖片
-  const link = document.createElement('a')
-  link.download = '台語方音符號.png'
-  link.href = canvas.toDataURL('image/png')
-  link.click()
-}
 
-const clearContent = () => {
-  emit('clear')
-}
 </script>
 
 <template>
@@ -272,14 +167,6 @@ const clearContent = () => {
     <div v-if="show" class="result-container">
       <div class="result-header">
         <h3>結果展示</h3>
-        <div class="action-buttons">
-          <button @click="exportImage" class="export-btn">
-            📷 輸出圖片
-          </button>
-          <button @click="clearContent" class="clear-btn">
-            🗑️ 清除
-          </button>
-        </div>
       </div>
       
       <div class="result-content">
@@ -355,7 +242,6 @@ const clearContent = () => {
 
 <style scoped>
 .result-display {
-  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -367,15 +253,12 @@ const clearContent = () => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .result-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e0e0e0;
@@ -387,44 +270,14 @@ const clearContent = () => {
   font-size: 1.2rem;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
 
-.export-btn, .clear-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.export-btn {
-  background: #4CAF50;
-  color: white;
-}
-
-.export-btn:hover {
-  background: #45a049;
-  transform: translateY(-1px);
-}
-
-.clear-btn {
-  background: #f44336;
-  color: white;
-}
-
-.clear-btn:hover {
-  background: #da190b;
-  transform: translateY(-1px);
-}
 
 .result-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: visible;
 }
 
 .vertical-display {
@@ -436,7 +289,7 @@ const clearContent = () => {
   min-height: 200px;
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   gap: .2em;
   overflow-y: auto;
   line-height: 1.5;
@@ -452,6 +305,7 @@ const clearContent = () => {
   justify-content: center;
   align-self: center;
   height: auto;
+  min-height: auto;
 }
 
 .character-group.plain-text {
@@ -565,29 +419,47 @@ const clearContent = () => {
 @media (max-width: 768px) {
   .result-container {
     padding: 1rem;
+    max-height: none;
+    overflow: visible;
   }
   
-  .result-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
+  .result-content {
+    overflow: visible;
   }
   
-  .action-buttons {
-    justify-content: center;
+  .vertical-display {
+    max-height: none;
+    overflow: visible;
+    min-height: 150px;
   }
+  
   
   .horizontal-text {
     font-size: 1.2rem;
   }
   
-  .phonetic-symbol {
-    font-size: 1rem;
+  .character-group {
+    align-self: center;
+    height: auto;
+    min-height: auto;
+    margin: 0.1rem;
+    margin-right: 0.2em;
   }
   
   .phonetic-column {
-    min-height: 60px;
-    padding: 0.3rem;
+    min-height: auto;
+    padding: 0.2rem;
+    height: auto;
+  }
+  
+  .chinese-char {
+    font-size: 1.3rem;
+    margin-bottom: 0.2rem;
+  }
+  
+  .phonetic-symbol {
+    font-size: 0.9rem;
+    margin: 0;
   }
 }
 </style>
