@@ -151,35 +151,45 @@ const exportImage = () => {
   // 縮放 context 以匹配高解析度
   ctx.scale(scaleFactor, scaleFactor)
   
-  // 設置背景
-  if (exportOptions.value.background) {
-    const color = exportOptions.value.backgroundColor
-    const opacity = exportOptions.value.backgroundOpacity
-    const r = parseInt(color.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
-    const b = parseInt(color.slice(5, 7), 16)
-    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`
-    ctx.fillRect(0, 0, baseWidth, baseHeight)
-  }
-  
-  // 繪製圓角邊框
-  if (exportOptions.value.rounded) {
-    const radius = exportOptions.value.borderRadius
-    const borderColor = exportOptions.value.borderColor
-    const borderWidth = 2
-    
-    // 調整邊框位置，避免被切到
+  // 設置背景和圓角邊框
+  if (exportOptions.value.background || exportOptions.value.rounded) {
+    const radius = exportOptions.value.rounded ? exportOptions.value.borderRadius : 0
+    const borderWidth = exportOptions.value.rounded ? 2 : 0
     const borderPadding = borderWidth / 2
-    const borderX = borderPadding
-    const borderY = borderPadding
-    const borderWidth_actual = baseWidth - borderWidth
-    const borderHeight_actual = baseHeight - borderWidth
     
-    ctx.strokeStyle = borderColor
-    ctx.lineWidth = borderWidth
-    ctx.beginPath()
-    ctx.roundRect(borderX, borderY, borderWidth_actual, borderHeight_actual, radius)
-    ctx.stroke()
+    // 計算背景和邊框的實際區域
+    const bgX = borderPadding
+    const bgY = borderPadding
+    const bgWidth = baseWidth - borderWidth
+    const bgHeight = baseHeight - borderWidth
+    
+    // 繪製背景（只在圓角區域內）
+    if (exportOptions.value.background) {
+      const color = exportOptions.value.backgroundColor
+      const opacity = exportOptions.value.backgroundOpacity
+      const r = parseInt(color.slice(1, 3), 16)
+      const g = parseInt(color.slice(3, 5), 16)
+      const b = parseInt(color.slice(5, 7), 16)
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`
+      
+      if (exportOptions.value.rounded) {
+        ctx.beginPath()
+        ctx.roundRect(bgX, bgY, bgWidth, bgHeight, radius)
+        ctx.fill()
+      } else {
+        ctx.fillRect(bgX, bgY, bgWidth, bgHeight)
+      }
+    }
+    
+    // 繪製圓角邊框
+    if (exportOptions.value.rounded) {
+      const borderColor = exportOptions.value.borderColor
+      ctx.strokeStyle = borderColor
+      ctx.lineWidth = borderWidth
+      ctx.beginPath()
+      ctx.roundRect(bgX, bgY, bgWidth, bgHeight, radius)
+      ctx.stroke()
+    }
   }
   
   characterGroups.forEach((group) => {
