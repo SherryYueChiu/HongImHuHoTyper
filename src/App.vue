@@ -190,9 +190,11 @@ body {
 .app {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
   height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Microsoft JhengHei', 'PingFang TC', 'Helvetica Neue', Arial, sans-serif;
+  position: relative;
 }
 
 .header {
@@ -233,13 +235,20 @@ body {
   padding: 1rem;
   overflow-y: auto;
   min-height: 0;
+  flex-shrink: 1;
 }
 
 @media (max-width: 768px) {
+  .app {
+    height: 100vh;
+    height: 100dvh; /* 使用動態視窗高度 */
+  }
+  
   .header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+    flex-shrink: 0;
   }
   
   .header h1 {
@@ -249,6 +258,12 @@ body {
   .export-btn {
     font-size: 0.8rem;
     padding: 0.4rem 0.8rem;
+  }
+  
+  .main-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 }
 </style>
