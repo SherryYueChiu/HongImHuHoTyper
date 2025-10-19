@@ -114,68 +114,75 @@ const handleKeyClick = (key: string) => {
     return
   }
   
-  // 處理特殊符號組合
-  if (key === 'ɤ') {
-    // 檢查是否有前一個字符可以組合
-    if (inputBuffer.value && specialSymbolMap[inputBuffer.value + 'ɤ']) {
-      const combinedSymbol = specialSymbolMap[inputBuffer.value + 'ɤ']
-      if (combinedSymbol) {
-        emit('phonetic-input', 'backspace') // 刪除前一個字符
-        emit('phonetic-input', combinedSymbol) // 輸入組合符號
-        inputBuffer.value = '' // 清除緩衝區
-      }
-    } else {
-      // 如果沒有可以組合的字符，直接輸入 ɤ
-      emit('phonetic-input', key)
-      inputBuffer.value = key
-    }
-  } else {
-    // 檢查複合符號組合
-    const newBuffer = inputBuffer.value + key
+  // 簡化的組合處理
+  const newBuffer = inputBuffer.value + key
+  console.log('Processing key:', key, 'buffer:', inputBuffer.value, 'newBuffer:', newBuffer)
+  
+  // 檢查是否為完整的組合
+  if (specialSymbolMap[newBuffer]) {
+    const combinedSymbol = specialSymbolMap[newBuffer]
+    console.log('Found combination:', newBuffer, '->', combinedSymbol)
     
-    // 先檢查是否為完整的複合符號
-    if (specialSymbolMap[newBuffer]) {
-      // 找到匹配的複合符號
-      const combinedSymbol = specialSymbolMap[newBuffer]
-      // 刪除緩衝區中的字符
-      for (let i = 0; i < inputBuffer.value.length; i++) {
-        emit('phonetic-input', 'backspace')
+    // 先輸出緩衝區中除了最後一個字符外的所有字符
+    if (inputBuffer.value.length > 1) {
+      const charsToOutput = []
+      for (let i = 0; i < inputBuffer.value.length - 1; i++) {
+        const char = inputBuffer.value[i]
+        if (char) {
+          charsToOutput.push(char)
+        }
       }
-      emit('phonetic-input', combinedSymbol) // 輸入組合符號
-      inputBuffer.value = '' // 清除緩衝區
+      charsToOutput.push(combinedSymbol)
+      console.log('Combination output:', charsToOutput)
+      emit('phonetic-input', 'batch-insert', charsToOutput)
     } else {
-      // 檢查是否為複合符號的開始
-      const possibleCombinations = Object.keys(specialSymbolMap).filter(combo => 
-        combo.startsWith(newBuffer) && combo !== newBuffer
+      // 直接替換，使用批量插入確保順序
+      console.log('Direct replacement with:', combinedSymbol)
+      emit('phonetic-input', 'batch-insert', [combinedSymbol])
+    }
+    inputBuffer.value = ''
+  } else {
+    // 檢查是否為組合的開始
+    const possibleCombinations = Object.keys(specialSymbolMap).filter(combo => 
+      combo.startsWith(newBuffer) && combo !== newBuffer
+    )
+    console.log('Possible combinations for', newBuffer, ':', possibleCombinations)
+    
+    if (possibleCombinations.length > 0) {
+      // 可能是組合的開始，加入緩衝區
+      console.log('Adding to buffer:', newBuffer)
+      inputBuffer.value = newBuffer
+    } else {
+      // 檢查當前字符是否可能是組合的開始
+      const singleCharCombinations = Object.keys(specialSymbolMap).filter(combo => 
+        combo.startsWith(key) && combo !== key
       )
+      console.log('Single char combinations for', key, ':', singleCharCombinations)
       
-      if (possibleCombinations.length > 0) {
-        // 可能是複合符號的開始，加入緩衝區但不輸出
-        inputBuffer.value = newBuffer
-        // 不輸出字符，等待下一個字符來完成組合
-      } else {
-        // 不是複合符號，先輸出緩衝區中的字符，然後輸入新字符
-        console.log('Not a combination, buffer:', inputBuffer.value, 'key:', key)
+      if (singleCharCombinations.length > 0) {
+        // 當前字符可能是組合的開始
+        console.log('Single char combination start:', key)
+        // 先輸出緩衝區中的字符
         if (inputBuffer.value) {
-          // 批量輸出緩衝區中的字符和新字符
-          const charsToOutput = []
           for (let i = 0; i < inputBuffer.value.length; i++) {
             const char = inputBuffer.value[i]
             if (char) {
-              charsToOutput.push(char)
+              emit('phonetic-input', char)
             }
           }
-          charsToOutput.push(key)
-          
-          console.log('Batch output:', charsToOutput)
-          // 使用批量插入
-          emit('phonetic-input', 'batch-insert', charsToOutput)
-          inputBuffer.value = '' // 清除緩衝區
-        } else {
-          console.log('Direct output:', key)
-          emit('phonetic-input', key)
-          // 不加入緩衝區，直接輸出
         }
+        // 將新字符加入緩衝區
+        inputBuffer.value = key
+      } else {
+        // 不是組合，輸出緩衝區中的字符和新字符
+        console.log('Not a combination, outputting')
+        if (inputBuffer.value) {
+          const charsToOutput = [...inputBuffer.value, key]
+          emit('phonetic-input', 'batch-insert', charsToOutput)
+        } else {
+          emit('phonetic-input', key)
+        }
+        inputBuffer.value = ''
       }
     }
   }
