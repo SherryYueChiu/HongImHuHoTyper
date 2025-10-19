@@ -245,13 +245,16 @@ body {
   }
   
   .header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
+    flex-direction: row;
+    gap: 0.5rem;
+    text-align: left;
     flex-shrink: 0;
+    align-items: center;
   }
   
   .header h1 {
+    flex: 1;
+    text-align: center;
     font-size: 1.2rem;
   }
   
