@@ -38,7 +38,7 @@ const processedText = computed((): CharacterGroup[] => {
                         'ㄚ', 'ㄛ', 'ㄜ', 'ㄝ', 'ㄞ', 'ㄟ', 'ㄠ', 'ㄡ', 'ㄢ', 'ㄣ', 'ㄤ', 'ㄥ', 'ㄦ', 'ㄧ', 'ㄨ', 'ㄩ',
                         'ㆠ', 'ㆣ', 'ㆢ', 'ㆡ', 'ㆩ', 'ㆧ', 'ㆥ', 'ㆮ', 'ㆯ', 'ㆪ', 'ㆫ', 'ㆬ', 'ㆭ', 'ㆰ', 'ㆱ',
                         'ㆦ', 'ㆤ', 'ㆲ', 'ㄫ', 'ɤ']
-  const toneMarks = ['ˊ', 'ˇ', 'ˋ', '˙', 'ˉ', '˪', '˫', 'ㆴ', 'ㆵ', 'ㆻ', 'ㆷ', '.']
+  const toneMarks = ['ˊ', 'ˇ', 'ˋ', '˙', 'ˉ', '˪', '˫', 'ㆴ', 'ㆵ', 'ㆻ', 'ㆷ']
   
   // 將文字分組：每個字符組包含一個漢字和其對應的注音符號+音調
   const groups = []
@@ -84,14 +84,30 @@ const processedText = computed((): CharacterGroup[] => {
     } else if (toneMarks.includes(char)) {
       currentGroup.tone.push(char)
     } else if (char === ' ') {
-      // 空格表示一聲，設置音調為一聲
-      currentGroup.tone.push('ˉ')
-      // 保存當前組並開始新組
+      // 如果有累積的一般文字，先保存
+      if (plainTextBuffer) {
+        groups.push({ 
+          char: plainTextBuffer, 
+          phonetics: [], 
+          tone: [], 
+          isPlainText: true 
+        })
+        plainTextBuffer = ''
+      }
+      
+      // 保存當前組
       if (currentGroup.char || currentGroup.phonetics.length > 0) {
         groups.push({ ...currentGroup })
+        currentGroup = { char: '', phonetics: [], tone: [] }
       }
-      currentGroup = { char: '', phonetics: [], tone: [] }
-      // 跳過空格，不添加為字符組
+      
+      // 將空格作為一般文字處理
+      groups.push({ 
+        char: ' ', 
+        phonetics: [], 
+        tone: [], 
+        isPlainText: true 
+      })
     } else if (char === '\n') {
       // 如果有累積的一般文字，先保存
       if (plainTextBuffer) {
