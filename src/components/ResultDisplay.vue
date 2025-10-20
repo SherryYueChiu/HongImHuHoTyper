@@ -6,6 +6,7 @@ interface Props {
   show: boolean
   fontFamily?: string
   alignment?: 'left' | 'center' | 'right'
+  lineSpacing?: number
 }
 
 interface CharacterGroup {
@@ -171,6 +172,14 @@ const processedText = computed((): CharacterGroup[] => {
   return groups
 })
 
+// 計算行距樣式
+const lineSpacingStyle = computed(() => {
+  const spacing = props.lineSpacing ?? 1.0
+  return {
+    gap: `${0.2 * spacing}em !important`,
+    '--character-margin': `${0.2 * spacing}rem`
+  }
+})
 
 </script>
 
@@ -185,7 +194,7 @@ const processedText = computed((): CharacterGroup[] => {
          <!-- 直式書寫顯示 -->
          <div class="vertical-display" :class="[
            props.alignment === 'center' ? 'align-center' : props.alignment === 'right' ? 'align-right' : 'align-left'
-         ]">
+         ]" :style="lineSpacingStyle">
            <div 
              v-for="(item, index) in processedText" 
              :key="index" 
@@ -324,7 +333,7 @@ const processedText = computed((): CharacterGroup[] => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0.2rem;
+  margin: var(--character-margin, 0.2rem);
   margin-right: .3em;
   position: relative;
   justify-content: center;

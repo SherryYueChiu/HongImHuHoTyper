@@ -16,6 +16,7 @@ const cursorPosition = ref(0)
 const showExportModal = ref(false)
 const exportFontFamily = ref('jf-openhuninn')
 const textAlignment = ref<'left'|'center'|'right'>('left')
+const lineSpacing = ref(1.0)
 
 // 處理輸入
 const handleInput = (text: string) => {
@@ -28,6 +29,7 @@ const handleInput = (text: string) => {
 const handleCursorPosition = (position: number) => {
   cursorPosition.value = position
 }
+
 
 // 處理方音符號輸入
 const handlePhoneticInput = (phonetic: string, data?: any) => {
@@ -82,6 +84,7 @@ const showExportOptions = () => {
         :show="showResult"
         :font-family="exportFontFamily"
         :alignment="textAlignment"
+        :line-spacing="lineSpacing"
       />
     </main>
 
@@ -102,6 +105,7 @@ const showExportOptions = () => {
       v-model="showExportModal"
       v-model:fontFamily="exportFontFamily"
       v-model:alignment="textAlignment"
+      v-model:lineSpacing="lineSpacing"
     />
   </div>
 </template>

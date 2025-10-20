@@ -6,6 +6,7 @@ interface Props {
   modelValue: boolean
   fontFamily?: string
   alignment?: 'left' | 'center' | 'right'
+  lineSpacing?: number
 }
 
 const props = defineProps<Props>()
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'update:fontFamily', value: string): void
   (e: 'update:alignment', value: 'left' | 'center' | 'right'): void
+  (e: 'update:lineSpacing', value: number): void
 }>()
 
 const exportOptions = ref({
@@ -43,7 +45,9 @@ const exportOptions = ref({
   borderOpacity: 1,
   shadowOpacity: 1,
   // 內留白（框內與文字之間的距離 / 匯出 padding）
-  padding: 10
+  padding: 10,
+  // 行距設置
+  lineSpacing: 1.0
 })
 
 // 與父層同步字體
@@ -60,6 +64,14 @@ const computedAlignment = computed({
   set: (val: 'left'|'center'|'right') => {
     exportOptions.value.alignment = val
     emit('update:alignment', val)
+  }
+})
+
+const computedLineSpacing = computed({
+  get: () => props.lineSpacing ?? exportOptions.value.lineSpacing,
+  set: (val: number) => {
+    exportOptions.value.lineSpacing = val
+    emit('update:lineSpacing', val)
   }
 })
 
@@ -528,6 +540,47 @@ const exportImage = () => {
                       <path d="M5 18h16" stroke="currentColor" stroke-width="1.7"/>
                     </svg>
                   </button>
+                </div>
+                <div class="option-group">
+                  <label>行距</label>
+                  <div class="radio-group">
+                    <button type="button" class="radio-btn" :class="{ active: computedLineSpacing === 0.5 }" @click="computedLineSpacing = 0.5">
+                      <svg width="22" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 18h18" stroke="currentColor" stroke-width="1.5"/>
+                      </svg>
+                      <span style="font-size: 10px; margin-top: 2px;">0.5x</span>
+                    </button>
+                    <button type="button" class="radio-btn" :class="{ active: computedLineSpacing === 1.0 }" @click="computedLineSpacing = 1.0">
+                      <svg width="22" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 9h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 15h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 18h18" stroke="currentColor" stroke-width="1.5"/>
+                      </svg>
+                      <span style="font-size: 10px; margin-top: 2px;">1.0x</span>
+                    </button>
+                    <button type="button" class="radio-btn" :class="{ active: computedLineSpacing === 2.0 }" @click="computedLineSpacing = 2.0">
+                      <svg width="22" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 6h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 7h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 8h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 9h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 10h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 11h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 13h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 14h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 15h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 16h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 17h18" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M3 18h18" stroke="currentColor" stroke-width="1.5"/>
+                      </svg>
+                      <span style="font-size: 10px; margin-top: 2px;">2.0x</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
