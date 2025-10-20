@@ -5,6 +5,7 @@ interface Props {
   text: string
   show: boolean
   fontFamily?: string
+  alignment?: 'left' | 'center' | 'right'
 }
 
 interface CharacterGroup {
@@ -182,7 +183,9 @@ const processedText = computed((): CharacterGroup[] => {
       
       <div class="result-content">
          <!-- 直式書寫顯示 -->
-         <div class="vertical-display">
+         <div class="vertical-display" :class="[
+           props.alignment === 'center' ? 'align-center' : props.alignment === 'right' ? 'align-right' : 'align-left'
+         ]">
            <div 
              v-for="(item, index) in processedText" 
              :key="index" 
@@ -305,6 +308,16 @@ const processedText = computed((): CharacterGroup[] => {
   gap: .2em;
   overflow-y: auto;
   line-height: 1.5;
+}
+
+.vertical-display.align-left {
+  justify-content: flex-start;
+}
+.vertical-display.align-center {
+  justify-content: center;
+}
+.vertical-display.align-right {
+  justify-content: flex-end;
 }
 
 .character-group {
